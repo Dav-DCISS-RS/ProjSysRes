@@ -61,7 +61,8 @@ print "Utilisateurs BD \n";
 # On peut rajouter les queries dans le fichier config
 # Ici le get_users affiche les utilisateurs
 $query = $cfg->val('queries', 'get_users');
-#print $query."\n" ; # if $options{'debug'};
+print "Requête SQL : \n";
+print $query."\n";
 # Je suppose que le code ci-dessous effectue la requête ?
 $sth = $dbh->prepare($query);
 $res = $sth->execute;
@@ -85,15 +86,19 @@ foreach my $i (@LDAPusers){
 
 # Comparaison des deux listes d'utilisateurs (BDD et LDAP)
 $lc = List::Compare->new(\@SIusers, \@LDAPusers);
-# On stocke les différences (utilisateurs présents dans ldap uniquement) dans une var
+# On stocke les différences (utilisateurs présents dans ldap uniquement) das une var
 @dels = sort($lc->get_Ronly);
 # Seulement s'il y a utilisateurs on exécute le code suivant
 if (scalar(@dels) > 0) {
-  foreach my $u (@dels) {
+    print "Ceci s'affiche s'il y a des utilisateurs a supprimer: \n";
+    foreach my $u (@dels) {
     $dn = sprintf("uid=%s,%s",$u,$cfg->val('ldap','usersdn'));
     printf("Suppression %s\n",$dn); #if $options{'verbose'};
     # le supprimer dans la base LDAP
     @LDAPusers = del_attr($ldap, $cfg->val('ldap','usersdn','@dels'));
+	
+	}
+}
 
 print "Utilisateurs après modif :\n";
 
@@ -107,21 +112,21 @@ foreach my $i (@LDAPusers){
    # print("Affichage de var s : uid=%s");
    # $ldap->delete("uid=%s",$dn);
    # print("Fin test");
-  }
-}
+
 # On vérifie la présence d'utilisateurs dans BDD mais pas LDAP (création)
 #add user
 @adds = sort($lc->get_Lonly);
 if (scalar(@adds) > 0) {
-  foreach my $u (@adds) {
-    $dn = sprintf("uid=%s,%s",$u,$cfg->val('ldap','usersdn'));
-    printf("Création %s\n", $dn); 
-    @LDAPusers = add_attr($ldap, $cfg->val('ldap','usersdn','@adds')); 
+    print "Ceci s'affiche s'il y a des utilisateurs a creer\n";
+    foreach my $v (@adds) {
+       $dn = sprintf("uid=%s,%s",$v,$cfg->val('ldap','usersdn'));
+       printf("Création %s\n", $dn); 
+       @LDAPusers = add_attr($ldap, $cfg->val('ldap','usersdn','@adds')); 
    
     }
 }
 print "\n";
-print ("utilisateurs dans ldap apr�s traitement :\n");
+print ("utilisateurs dans ldap apres traitement :\n");
 foreach my $i (@LDAPusers){
 	printf $i;
 	printf "\n";
