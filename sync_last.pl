@@ -97,7 +97,29 @@ my $today = strftime "%Y%m%d%H%M%S", localtime;
 #-----------------------------------------------------------------------
 # AJOUT
 #-----------------------------------------------------------------------
+foreach $identifiant (@adds) {
+    if(!ldap_lib::exist_entry($ldap,$cfg->val('ldap','usersdn'),"(uid=$identifiant)")) {
+        $query = $cfg->val('queries', 'get_users');
+        print "Requête SQL : \n";
+        print $query."\n" ; # if $options{'debug'};
+        $sth = $dbh->prepare($query);
+        $res = $sth->execute;
+        while ($row = $sth->fetchrow_hashref) {
+            my $identifiant = $row->{identifiant};
+            push(@SIusers,$row->{identifiant});
+            printf "%s %s %s %s %s\n", $row->{identifiant}, $row->{nom},$row->{prenom}, $row->{courriel}, $row->{id_utilisateur};
+            $attrib{'cn'} = $row->{prenom}." ".$row->{nom};
+            $attrib{'sn'} = $row->{nom};
+            $attrib{'givenName'} = $row->{prenom};
+            $attrib{'mail'} = $row->{courriel};
+            $attrib{'uidNumber'} = $row->{id_utilisateur};
+            $attrib{'gidNumber'} = $row->{id_groupe};
+            $attrib{'homeDirectory'} = "/home/".$row->{identifiant};
+            $attrib{'loginShell'} = "/bin/bash";
+            $attrib{'userPassword'} = gen_password($row->{mot_passe});
+            $attrib{'shadowExpire'} = date2shadow($row->{date_expiration});
 
+            ldap_lib::add_user($ldap,$row->{identifiant},$cfg->val('ldap','usersdn'),%attrib);
 
 #-----------------------------------------------------------------------
 # FIN AJOUT
